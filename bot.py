@@ -24,7 +24,7 @@ intents.members = True
 # DISCORD_BOT_TOKEN=xxxx
 DISCORD_BOT_TOKEN = os.environ['DISCORD_BOT_TOKEN']
 # These values are found by right clicking on the channel and then clicking copy ID
-BOT_TESTING_CHANNEL_ID = 809303956667891752
+BOT_TESTING_CHANNEL_ID = 830924750243102780
 MECH_MARKET_CHANNEL_ID = 829538527133171732
 
 con_info = dict(
@@ -75,7 +75,7 @@ async def on_ready():
     announcement_keywords = ["[gb]", "[ic]", "[IN STOCK]", "[PRE-ORDER]", "Novelkeys Updates"]
 
     logging.info(f'{str(datetime.datetime.now())}: Bot is ready')
-    await bot_testing_channel.send("The charasmatic leader, JiU bot is ready!! uWu")
+    await bot_testing_channel.send("The charasmatic leader, JiU bot, is ready!! uWu")
 
     while True:
         con = mysql.connector.connect(**con_info)
