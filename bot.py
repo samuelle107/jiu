@@ -75,7 +75,7 @@ async def on_ready():
     announcement_keywords = ["[gb]", "[ic]", "[IN STOCK]", "[PRE-ORDER]", "Novelkeys Updates"]
 
     logging.info(f'{str(datetime.datetime.now())}: Bot is ready')
-    await bot_testing_channel.send("MAZ Chan is ready! uWu")
+    await bot_testing_channel.send("The charasmatic leader, JiU bot is ready!! uWu")
 
     while True:
         con = mysql.connector.connect(**con_info)
