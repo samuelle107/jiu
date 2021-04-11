@@ -10,7 +10,6 @@ from discord.ext import commands
 from dotenv import load_dotenv
 from subreddit_scrapper import get_scraped_submissions
 from db_helper import get_all, get_all_conditional, insert, remove, does_exist
-from currency_converter import CurrencyConverter
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -25,15 +24,8 @@ intents.members = True
 # DISCORD_BOT_TOKEN=xxxx
 DISCORD_BOT_TOKEN = os.environ['DISCORD_BOT_TOKEN']
 # These values are found by right clicking on the channel and then clicking copy ID
-WELCOME_CHANNEL_ID = 744054264640569355
-BOT_COMMANDS_CHANNEL_ID = 744057858886336552
-BOT_TESTING_CHANNEL_ID = 744065526023847957
-GENERAL_CHAT_CHANNEL_ID = 744030856196390994
-RULES_CHANNEL_ID = 744047107866099813
-MECH_MARKET_CHANNEL_ID = 746622430927257721
-KEEB_UPDATES_CHANNEL_ID = 744044577165672449
-ARTISAN_UPDATES_CHANNEL_ID = 746525189738725406
-LOGGING_CHANNEL_ID = 753119801399967804
+BOT_TESTING_CHANNEL_ID = 809303956667891752
+MECH_MARKET_CHANNEL_ID = 829538527133171732
 
 con_info = dict(
     user=os.getenv("MYSQL_USERNAME"),
@@ -45,7 +37,6 @@ con_info = dict(
 )
 
 client = commands.Bot(command_prefix='!', intents=intents)
-
 
 def query_keywords() -> list:
     con = mysql.connector.connect(**con_info)
@@ -75,13 +66,10 @@ def get_url_at(index: int, text: str) -> str:
         print(e)
         return ""
 
-
 @client.event
 async def on_ready():
     bot_testing_channel = client.get_channel(BOT_TESTING_CHANNEL_ID)
     mechmarket_channel = client.get_channel(MECH_MARKET_CHANNEL_ID)
-    keeb_updates_channel = client.get_channel(KEEB_UPDATES_CHANNEL_ID)
-    artisans_update_channel = client.get_channel(ARTISAN_UPDATES_CHANNEL_ID)
 
     subreddits = ["MechMarket", "MechGroupBuys", "MechanicalKeyboards"]
     announcement_keywords = ["[gb]", "[ic]", "[IN STOCK]", "[PRE-ORDER]", "Novelkeys Updates"]
@@ -103,12 +91,6 @@ async def on_ready():
             if not post_does_exist:
                 logging.info(f'{str(datetime.datetime.now())}: Found new submission: {submission.title[:20]}')
                 insert(con, "mechmarket_posts", ["post_id", "title"], [submission.id, submission.title[:100]])
-
-                if any(announcement_keyword.lower() in submission.title.lower() for announcement_keyword in announcement_keywords):
-                    await keeb_updates_channel.send(f'```{submission.title}```\n \nhttps://redd.it/{submission.id}')
-                
-                if "[Artisan]" in submission.title:
-                    await artisans_update_channel.send(f'```{submission.title}```\n \nhttps://redd.it/{submission.id}')
 
                 if submission.subreddit == "MechMarket":
                     matching_keywords = list(filter(lambda keyword: keyword.lower() in submission.title.lower(), keywords))
@@ -133,7 +115,9 @@ async def on_ready():
 
                     if mentions:
                         await mechmarket_channel.send(f'{", ".join(list(set(mentions)))}')
+
                     await mechmarket_channel.send(embed=embed)
+
                     if image_url:
                         await mechmarket_channel.send(image_url)
 
@@ -147,123 +131,18 @@ async def on_ready():
 @client.event
 async def on_member_join(member):
     try:
-        channel = client.get_channel(WELCOME_CHANNEL_ID)
-        url = "https://i.imgur.com/ANEL8c3.mp4"
-        role = discord.utils.get(member.guild.roles, name="Refugee")
-
         con = mysql.connector.connect(**con_info)
         insert(con, "users", ["user_id"], [member.id])
         con.close()
 
-        await member.add_roles(role)
-        await channel.send(url)
-        await channel.send(
-            f'Iwasshaimase, {member.mention}!\nPwease wead da wules at <#{RULES_CHANNEL_ID}>'
-        )
     except Exception as e:
         logging.info(f'{str(datetime.datetime.now())}: Added {member}: ')
-
-
-@client.event
-async def on_reaction_add(reaction, user):
-    channel = client.get_channel(LOGGING_CHANNEL_ID)
-
-    message = f"{user}: {reaction}"
-    await channel.send(message)
-
-# Used to paste copy pasta
-# !egghead
-@client.command()
-async def egghead(ctx):
-    await ctx.send(
-        "https://media.discordapp.net/attachments/668640100367990793/714849219231613029/unknown.png"
-    )
-
-
-@client.command()
-async def warn(ctx, member: discord.Member, *arg):
-    user_roles = map(lambda x: x.name, ctx.author.roles)
-    authorized_roles = ["Head Mod", "pp", "bambi", "Special Forces", "GOD"]
-
-    if any(role in authorized_roles for role in user_roles):
-        embed = discord.Embed(colour=0xFF0000)
-        embed.description = f'**{member}** {" ".join(arg)}'
-        await ctx.send(f'Oh nyo! {member.mention} has been warned.')
-        await ctx.send(embed=embed)
-        await ctx.send("https://imgur.com/a/8XDd1GA")
-    else:
-        await ctx.send("Oh nyo! It doesn't seem like you have permission! ( っ- ‸ – ς)")
-
-
-# Used to paste copy pasta
-# !prawn
-@client.command()
-async def prawn(ctx):
-    await ctx.send("ANOTHA PRAWN ON THE BAWBIE")
-
-
-# Used to clone a message to a different channel
-# !cl <number of messages ago> <#channel>
-@client.command()
-async def cl(ctx, *args):
-    messages_ago = int(args[0]) + 1
-    target_channel_id = int("".join([(s) for s in args[1] if s.isdigit()]))
-
-    channel = client.get_channel(target_channel_id)
-    messages = await ctx.history(limit=messages_ago).flatten()
-
-    await channel.send(f"{messages[-1].author.mention} said: {messages[-1].content}")
-    for attachment in messages[-1].attachments:
-        await channel.send(attachment.url)
-
-
-# Used to clone a message by id
-# !clid id <#channel>
-@client.command()
-async def clid(ctx, *args):
-    id = int(args[0])
-    target_channel_id = int("".join([(s) for s in args[1] if s.isdigit()]))
-    channel = client.get_channel(target_channel_id)
-    message_data = await ctx.channel.fetch_message(id)
-
-    await channel.send(f"{message_data.author.mention} said: {message_data.content}")
-    for attachment in message_data.attachments:
-        await channel.send(attachment.url)
-
 
 @client.command()
 async def gugl(ctx, *args):
     base_url = "https://www.google.com/search?"
     query = f"q={'+'.join(args)}"
-    await ctx.send(base_url + query)
-
-
-@client.command()
-async def baka(ctx):
-    message = "B-b-baka! You just don't know when to stop. Hmph!"
-    await ctx.send(message)
-    await ctx.send("https://www.seekpng.com/png/detail/928-9281261_png-baka-anime-emojis-for-discord.png")
-                                                  
-
-@client.command()
-async def puppet(ctx, *args):
-    target_channel_id = int("".join([(s) for s in args[0] if s.isdigit()]))
-    channel = client.get_channel(target_channel_id)
-    message = " ".join(args[1:])
-    await channel.send(message)
-                                            
-                        
-@client.command()
-async def convert(ctx, value: float, current_currency: str, target_currency: str):
-    c = CurrencyConverter()
-    try:
-        converted_value = round(c.convert(float(value), current_currency.upper(), target_currency.upper()), 2)
-        print(converted_value)
-        await ctx.send(f"Hewwo! {value} {current_currency} is {converted_value} {target_currency}!")
-    except Exception as e:
-        await ctx.send("Uh oh! I am very sowwi. I could not convert that!")
-    
-                                                  
+    await ctx.send(base_url + query)                                                                                                                                     
 
 @client.command(aliases=["ak"])
 async def add_keyword(ctx, *arg):
