@@ -24,7 +24,7 @@ intents.members = True
 # DISCORD_BOT_TOKEN=xxxx
 DISCORD_BOT_TOKEN = os.environ['DISCORD_BOT_TOKEN']
 # These values are found by right clicking on the channel and then clicking copy ID
-BOT_TESTING_CHANNEL_ID = 809303956667891752
+BOT_TESTING_CHANNEL_ID = 835562080420626432
 MECH_MARKET_CHANNEL_ID = 829538527133171732
 
 con_info = dict(
